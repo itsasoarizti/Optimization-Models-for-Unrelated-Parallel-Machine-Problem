@@ -1,14 +1,44 @@
 import random
 from deap import base, creator, tools, algorithms
 
-def algoritmo_genetico(n,m,C):
+def creator(C: np.ndarray, 
+            tasks: ’dict[int, list[int]]’,
+            ) -> ’dict[int, list[int]] ’:
+    '''
+    This function generates random task sequences for each machine. 
+    It returns a dictionary with the task order for each machine.     
+    Example:
+        Machine 0 can perform tasks 1, 3, 4 and 5
+        Machine 1 can perfomr tasks 1, 2, 4, 5 and 6
+        Machine 2 can perform tasks 1, 2, 5, and 6
+
+        Tasks: {0: [1, 3, 4, 5] , 1: [1 , 2 , 4 , 5 , 6] , 2: [1 , 2 , 5 , 6]}
+
+    The function will return the following:
+        Task sequence of Machine 0: 3
+        Task sequence of Machine 1: 4
+        Task sequence of Machine 2: 5 , 2 , 6 , 1
+
+        Output : {0: [0 , 1 , 0 , 0] , 1: [0 , 0 , 1 , 0 , 0] , 2: [4 , 2 , 1 , 3]}
+
+    Parameters:
+        C (np. ndarray): Cost matrix
+        tasks (dict[int, list[int]]): The tasks each machine can perform
+
+    Returns:
+        dict: Dictionary indicating the task order for each machine
+
+    '''
+    m, n, _ = C.shape
+    n -= 2
+def genetic_algorithm(n,m,C):
     
-    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))  # Minimizar el tiempo total
-    creator.create("Individual", dict, typecode='i', fitness=creator.FitnessMin) #Representa un individuo como una secuencia de tareas y maquinas
+    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+    creator.create("Individual", dict, typecode='i', fitness=creator.FitnessMin)
 
     toolbox = base.Toolbox()
     
-    #makina bakoitzak egin ditzazken tareak
+    # tasks each machine can do
     tareak = {_m: [i for i in range(1, n + 1) if sum(C[_m][i]) != 0] for _m in range(m)}
 
     # individuoak eta populazioa sortu
