@@ -1,12 +1,10 @@
-
 import numpy as np
 
-# Función para calcular probabilidades de movimiento
-def probabilitatea(
-        feromonak: np.ndarray,
+def probabilities(
+        pheromones: np.ndarray,
         _m: int,
-        tarea_actual: int,
-        egin_gabe: 'list[int]',
+        actual_task: int,
+        undone: 'list[int]',
         C,
         alpha: float = 1.0,
         beta: float = 5.0) -> np.ndarray:
@@ -14,10 +12,10 @@ def probabilitatea(
     This function calculates the probability of moving to the next task based on the pheromones and the visibility.
 
     Args:
-            feromonak (np.ndarray): Pheromone matrix.
+            pheromones (np.ndarray): Pheromone matrix.
             _m (int): Machine index.
-            tarea_actual (int): Current task.
-            egin_gabe (list[int]): List of tasks not yet performed.
+            actual_task (int): Current task.
+            undone (list[int]): List of tasks not yet performed.
             alpha (float): Pheromone importance.
             beta (float): Visibility importance.
 
@@ -26,30 +24,28 @@ def probabilitatea(
     """
 
     # Extract pheromones for the current machine and task
-    tau = feromonak[_m, tarea_actual, egin_gabe] ** alpha
+    tau = pheromones[_m, actual_task, undone] ** alpha
 
     # Calculate visibility (inverse of the cost matrix) and handle division by zero
     with np.errstate(divide='ignore', invalid='ignore'):
-        eta = np.where(C[_m, tarea_actual, egin_gabe] != 0,
-                       (1.0 / C[_m, tarea_actual, egin_gabe]) ** beta,
+        eta = np.where(C[_m, actual_task, undone] != 0,
+                       (1.0 / C[_m, actual_task, undone]) ** beta,
                        0.0)  # If cost is zero, set visibility to zero
 
     # Combine pheromone and visibility influences
-    biderketa = tau * eta
+    mult = tau * eta
 
     # Normalize to get probabilities, ensuring we don't divide by zero
-    suma = np.sum(biderketa)
-    if suma == 0:
+    sum = np.sum(mult)
+    if sum == 0:
         # Equal probability if all values are zero
-        prob = np.ones_like(biderketa) / len(biderketa)
+        prob = np.ones_like(mult) / len(mult)
     else:
-        prob = biderketa / suma
+        prob = mult / sum
 
     return prob
 
-
-# Función para construir rutas para todas las máquinas
-def rutak_sortu(feromonak: np.ndarray,
+def generate_route(pheromones: np.ndarray,
                 m: int,
                 n: int,
                 C: np.ndarray) -> np.ndarray:
@@ -57,7 +53,7 @@ def rutak_sortu(feromonak: np.ndarray,
     This function creates a route for each machine.
 
     Args:
-            feromonak (np.ndarray): Pheromone matrix.
+            pheromones (np.ndarray): Pheromone matrix.
             m (int): Number of machines.
             n (int): Number of tasks.
 
@@ -67,68 +63,66 @@ def rutak_sortu(feromonak: np.ndarray,
     '''
     # Initialize routes with -1 placeholders (indicating unassigned slots)
     # Exclude the tasks that cannot be performed by each machine
-    rutak = -1 * np.ones((m, n + 2), dtype=int)
+    routes = -1 * np.ones((m, n + 2), dtype=int)
 
     # Start each route with the dummy start task (0)
-    rutak[:, 0] = 0
+    routes[:, 0] = 0
 
     # List of tasks to be assigned (excluding dummy tasks 0 and n+1)
-    egin_gabe = np.arange(1, n + 1)
+    undone = np.arange(1, n + 1)
 
     # Track the current position for each machine's route
     current_positions = np.ones(m, dtype=int)
 
-    while egin_gabe.size > 0:
+    while undone.size > 0:
         # Randomly select a machine
         _m = np.random.randint(m)
 
         # Current task for the selected machine (_m)
-        tarea_actual = rutak[_m, current_positions[_m] - 1]
+        actual_task = routes[_m, current_positions[_m] - 1]
 
         # Find tasks that the machine can perform (vectorized operation)
         # Boolean mask of tasks that can be performed
         # If the cost is zero, the task cannot be performed
 
-        mask = np.any(C[_m, egin_gabe], axis=1)
+        mask = np.any(C[_m, undone], axis=1)
 
-        egin_gabe_m = egin_gabe[mask]
+        undone_m = undone[mask]
 
         # If no tasks can be assigned, continue to the next iteration
-        if egin_gabe_m.size == 0:
+        if undone_m.size == 0:
             continue
 
         # Calculate probabilities for selecting the next task
-        prob = probabilitatea(feromonak, _m, tarea_actual, egin_gabe_m,C)
+        prob = probabilitatea(pheromones, _m, actual_task, undone_m,C)
 
         # Choose the next task based on probabilities
-        hurrengo_tarea = np.random.choice(egin_gabe_m, p=prob / prob.sum())
+        next_task = np.random.choice(undone_m, p=prob / prob.sum())
 
         # Add the selected task to the route and remove it from unassigned tasks
-        rutak[_m, current_positions[_m]] = hurrengo_tarea
+        routes[_m, current_positions[_m]] = next_task
         current_positions[_m] += 1
         # Remove the selected task from the list of unassigned tasks
-        egin_gabe = egin_gabe[egin_gabe != hurrengo_tarea]
+        undone = undone[undone != next_task]
 
     # Add the dummy end task (n + 1) to each route
     for i in range(m):
-        rutak[i, current_positions[i]] = n + 1
+        routes[i, current_positions[i]] = n + 1
 
-    return rutak
+    return routes
 
-
-# Actualización de feromonas
-def feromonak_berritu(feromonak: np.ndarray,
-                      soluzioak: np.ndarray,
-                      denb_soluzioak: np.ndarray,
+def pheromone_update(pheromones: np.ndarray,
+                      solutions: np.ndarray,
+                      time_solutions: np.ndarray,
                       rho: float = 0.5,
                       Q: float = 100) -> None:
     '''
     This function updates the pheromones based on the solutions found, and does not return anything.
 
     Args:
-            feromonak (np.ndarray): Pheromone matrix.
-            soluzioak (np.ndarray): List of routes for each machine.
-            denb_soluzioak (np.ndarray): List of total times for each machine.
+            pheromones (np.ndarray): Pheromone matrix.
+            solutions (np.ndarray): List of routes for each machine.
+            time_solutions (np.ndarray): List of total times for each machine.
             rho (float): Evaporation rate.
             Q (float): Constant for pheromone deposition.
 
@@ -136,44 +130,44 @@ def feromonak_berritu(feromonak: np.ndarray,
             None
     '''
     # Evaporation: reduce pheromone levels
-    feromonak *= (1 - rho)
+    pheromones *= (1 - rho)
 
     # Vectorized deposition
     # deposicion
-    for rutak, denb_totala in zip(soluzioak, denb_soluzioak):
-        for _m, ruta in enumerate(rutak):
-            if denb_totala[_m] == 0:
+    for routes, time_total in zip(solutions, time_solutions):
+        for _m, route in enumerate(routes):
+            if time_total[_m] == 0:
                 continue  # Skip if the total time is zero to avoid division by zero
 
-            for i in range(len(ruta)-1):
-                task_i = ruta[i]
-                task_next = ruta[i+1]
+            for i in range(len(route)-1):
+                task_i = route[i]
+                task_next = route[i+1]
                 # Apply pheromone deposit to both directions (i -> i+1 and i+1 -> i)
-                feromonak[_m][task_i][task_next] += Q / denb_totala[_m]
-                feromonak[_m][task_next][task_i] += Q / denb_totala[_m]
+                pheromones[_m][task_i][task_next] += Q / time_total[_m]
+                pheromones[_m][task_next][task_i] += Q / time_total[_m]
 
 
-def denbora_kalkulatu(rutak: np.ndarray, C: np.ndarray) -> np.ndarray:
+def calculate_time(routes: np.ndarray, C: np.ndarray) -> np.ndarray:
     '''
     Calculates the total time for each route.
 
     Args:
-        rutak (np.ndarray): Array of routes for each machine (shape: m x k, where k varies per route).
+        routes (np.ndarray): Array of routes for each machine (shape: m x k, where k varies per route).
         C (np.ndarray): Cost matrix (shape: m x n x n).
 
     Returns:
         np.ndarray: Array of total times for each machine (shape: m).
     '''
-    denbora_totalak = np.zeros(len(rutak))
+    total_times = np.zeros(len(routes))
 
-    for _m, ruta in enumerate(rutak):
+    for _m, route in enumerate(routes):
         # Calculate the cost for each consecutive pair of tasks
-        ruta_pairs = np.array([ruta[:-1], ruta[1:]])
-        denbora_totalak[_m] = np.sum(C[_m, ruta_pairs[0], ruta_pairs[1]])
+        route_pairs = np.array([route[:-1], route[1:]])
+        total_times[_m] = np.sum(C[_m, route_pairs[0], route_pairs[1]])
 
-    return denbora_totalak
+    return total_times
 
-def ACO(n: int, m: int, C: np.ndarray, hormigas: int = 50, iteraciones: int = 200):
+def ACO(n: int, m: int, C: np.ndarray, ants: int = 50, iterations: int = 200):
     '''
     This function solves the problem using Ant Colony Optimization (ACO).
 
@@ -181,8 +175,8 @@ def ACO(n: int, m: int, C: np.ndarray, hormigas: int = 50, iteraciones: int = 20
         n (int): Number of tasks.
         m (int): Number of machines.
         C (np.ndarray): Cost matrix.
-        hormigas (int): Number of ants.
-        iteraciones (int): Number of iterations.
+        ants (int): Number of ants.
+        iterations (int): Number of iterations.
 
     Returns:
         float: Best total time found by the algorithm.
@@ -198,24 +192,24 @@ def ACO(n: int, m: int, C: np.ndarray, hormigas: int = 50, iteraciones: int = 20
     # Best solution tracking
     best_total_time = float('inf')
 
-    feromonak = np.ones((m, n+2, n+2))
+    pheromones = np.ones((m, n+2, n+2))
 
-    for iteration in range(iteraciones):
-        #print(f"\nIteration {iteration + 1}/{iteraciones}")
+    for iteration in range(iterations):
+        #print(f"\nIteration {iteration + 1}/{iterations}")
 
         # Each ant constructs a solution
         routes_ants = []
         times_ants = []
 
-        for _ in range(hormigas):
+        for _ in range(ants):
             # Generate routes and calculate times
-            routes = rutak_sortu(feromonak, m, n, C)
-            times = denbora_kalkulatu(routes, C)
+            routes = generate_route(pheromones, m, n, C)
+            times = calculate_time(routes, C)
 
             routes_ants.append(routes)
             times_ants.append(times)
 
-            # Find the maximum time for this solution (i.e., the makespan)
+            # Find the maximum time for this solution (the makespan)
             max_time = max(times)
 
             # Update the best solution if a better one is found
@@ -223,7 +217,7 @@ def ACO(n: int, m: int, C: np.ndarray, hormigas: int = 50, iteraciones: int = 20
                 best_total_time = max_time
                 # print("New best solution found with makespan: {best_total_time}")
         # Update pheromones based on all solutions found in this iteration
-        feromonak_berritu(feromonak,
+        pheromones_berritu(pheromones,
                           routes_ants,
                           times_ants, rho, Q)
 
