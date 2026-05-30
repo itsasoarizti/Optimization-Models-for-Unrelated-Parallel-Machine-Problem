@@ -34,14 +34,12 @@ The goal is to:
 
 The cost of executing task (j) immediately after task (i) on machine (m) is:
 
-[
-C_{mij} = p_{mj} + s_{mij}
-]
+$$ C_{mij} = p_{mj} + s_{mij} $$
 
 where:
 
-* (p_{mj}) is the processing time of task (j) on machine (m)
-* (s_{mij}) is the setup time required when task (j) follows task (i)
+* ($p_{mj}$) is the processing time of task (j) on machine (m)
+* ($s_{mij}$) is the setup time required when task (j) follows task (i)
 
 ---
 
