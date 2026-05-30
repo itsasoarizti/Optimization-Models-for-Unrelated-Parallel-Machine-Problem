@@ -93,8 +93,8 @@ def evalMTSP(individual : 'dict[int, list[int]]',
                 m_time += C[_m][aux][aux2] # Pt(j) + St(i,j)
     
         all_times.append(m_time)
-    final_time = max(all_times) # longest time
-    return final_time,
+    makespan = max(all_times) # longest time
+    return makespan,
 
 def machine_i(individual: 'dict[int, list[int]]', 
               i: int,
