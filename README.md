@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains the implementation developed for my Mathematics Bachelor's Thesis (TFG), focused on solving a scheduling problem in **Unrelated Parallel Machines with sequence-dependent setup times**.
+This repository contains the implementation developed for my Bachelor's Thesis (TFG) in Mathematics Degree, focused on solving a scheduling problem in **Unrelated Parallel Machines with sequence-dependent setup times**.
 
 The objective is to assign and sequence a set of tasks among multiple machines while minimizing the **makespan** (the completion time of the busiest machine).
 
@@ -205,4 +205,5 @@ by comparing exact optimization techniques against metaheuristic approaches for 
 Bachelor's Thesis (TFG)
 
 Degree in Mathematics
+
 Author: Itsaso Ariztimuño Cenoz
