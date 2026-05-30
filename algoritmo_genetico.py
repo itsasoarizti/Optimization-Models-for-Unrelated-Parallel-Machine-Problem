@@ -29,8 +29,13 @@ def creator(C: np.ndarray,
         dict: Dictionary indicating the task order for each machine
 
     '''
-    m, n, _ = C.shape
+m, n, _ = C.shape
     n -= 2
+
+
+
+            
+
 def genetic_algorithm(n,m,C):
     
     creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
