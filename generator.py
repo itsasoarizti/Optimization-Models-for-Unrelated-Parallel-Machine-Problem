@@ -55,43 +55,43 @@ def create_processing_times(m, n, processing_time_gap, eligibility_matrix):
 
     return processing_times
 
-def create_configuration_times(m, n, configuration_time_gap, eligibility_matrix):
+def create_setup_times(m, n, setup_time_gap, eligibility_matrix):
 
     """
-    This function generates random configuration times, including dummy tasks (0 and n+1)
+    This function generates random setup times, including dummy tasks (0 and n+1)
     
     Args:
         m (int): Number of machines.
         n (int): Number of real tasks.
-        configuration_time_gap (tuple): Value-gap for configuration times.
+        setup_time_gap (tuple): Value-gap for setup times.
         eligibility_matrix (np.ndarray): Eligibility matrix. 
         
     Returns:
-        configuration_times (np.ndarray): (m,n+2,n+2) size configuration time matrix.
+        setup_times (np.ndarray): (m,n+2,n+2) size setup time matrix.
     """
     
-    configuration_times = np.random.randint(configuration_time_gap[0], configuration_time_gap[1], size=(m, n+2, n+2))
+    setup_times = np.random.randint(setup_time_gap[0], setup_time_gap[1], size=(m, n+2, n+2))
 
     for machine in range(m):
         # A task cannot be its own successor, so set the diagonals to 0
-        np.fill_diagonal(configuration_times[machine], 0)
+        np.fill_diagonal(setup_times[machine], 0)
 
-        # If a machine is not capable of performing a task, set the configuration times for that task to 0
+        # If a machine is not capable of performing a task, set the setup times for that task to 0
         for task in range(1,n+1):
             if not eligibility_matrix[machine, task-1]:
-                configuration_times[machine][task, :] = 0
-                configuration_times[machine][:, task] = 0
+                setup_times[machine][task, :] = 0
+                setup_times[machine][:, task] = 0
 
         # 0 dummy-task is not any machines's next task
-        configuration_times[machine][:, 0] = 0
+        setup_times[machine][:, 0] = 0
         # n+1 dummy-task is not any machines's before task
-        configuration_times[machine][n+1, :] = 0
-        # The configuration time to go to the n+1 dummy-task is 0
-        configuration_times[machine][:, n+1] = 0
+        setup_times[machine][n+1, :] = 0
+        # The setup time to go to the n+1 dummy-task is 0
+        setup_times[machine][:, n+1] = 0
 
-    return configuration_times
+    return setup_times
 
-def create_cost_matrix(m, n, configuration_times, processing_times, eligibility_matrix):
+def create_cost_matrix(m, n, setup_times, processing_times, eligibility_matrix):
     
     """
     This function creates a cost matrix by combining processing times and setup times.    
@@ -99,7 +99,7 @@ def create_cost_matrix(m, n, configuration_times, processing_times, eligibility_
     Args:
         m (int): Number of machines.
         n (int): Number of real tasks.
-        configuration_times (np.ndarray): Configuration times matrix.
+        setup_times (np.ndarray): setup times matrix.
         processing_times (np.ndarray): Processing times matrix.
         eligibility_matrix (np.ndarray): Eligitibility matrix.
         
@@ -113,7 +113,7 @@ def create_cost_matrix(m, n, configuration_times, processing_times, eligibility_
         for task1 in range(n+1):
             for task2 in range(n+2):
                 if task1 != task2:    
-                    C[machine, task1, task2] = processing_times[machine, task2] + configuration_times[machine, task1, task2]
+                    C[machine, task1, task2] = processing_times[machine, task2] + setup_times[machine, task1, task2]
 
         for task in range(1,n+1):
             if not eligibility_matrix[machine, task-1]:
@@ -121,7 +121,7 @@ def create_cost_matrix(m, n, configuration_times, processing_times, eligibility_
 
     return C 
 
-def generator(m, n, processing_time_gap, configuration_time_gap):
+def generator(m, n, processing_time_gap, setup_time_gap):
     
     """
     This function generates the cost matrix and the eligibility matrix for given parameters.
@@ -130,7 +130,7 @@ def generator(m, n, processing_time_gap, configuration_time_gap):
         m (int): Number of machines.
         n (int): Number of real tasks.
         processing_time_gap (tuple): Value gap of processing times.
-        configuration_time_gap (tuple): Value gap of configuration times.
+        setup_time_gap (tuple): Value gap of setup times.
 
     Returns:
         C (tuple): Cost matrix.
@@ -139,11 +139,11 @@ def generator(m, n, processing_time_gap, configuration_time_gap):
     # Create eligibility matrix
     eligibility_matrix = create_eligibility_matrix(m, n)
         
-    # Generate configuration and processing times
+    # Generate setup and processing times
     processing_times = create_processing_times(m, n, processing_time_gap, eligibility_matrix)
-    configuration_times = create_onfiguration_times(m, n, configuration_time_gap, eligibility_matrix)
+    setup_times = create_onfiguration_times(m, n, setup_time_gap, eligibility_matrix)
     
     # Create cost matrix
-    cost_matrix = create_cost_matrix(m, n, configuration_times, processing_times, eligibility_matrix)
+    cost_matrix = create_cost_matrix(m, n, setup_times, processing_times, eligibility_matrix)
     
     return cost_matrix
