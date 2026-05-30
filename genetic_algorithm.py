@@ -210,8 +210,7 @@ def mate(ind1: 'dict[int, list[int]]',
     child2 = fix(child2, C, tasks)
     return child1, child2
 
-
-def GEN(n: int, m: int, C: np.ndarray, population: int = 500) -> float:
+def GEN(n: int, m: int, C: np.ndarray, population: int = 500) -> float, np.ndarray:
     '''
     This function solves the problem using a Genetic Algorithm
 
@@ -223,6 +222,7 @@ def GEN(n: int, m: int, C: np.ndarray, population: int = 500) -> float:
 
     Returns:
         float: The time taken to complete all tasks
+        np.ndarray: tasks sequence for each machine
     '''
 
     tasks = {_m: [i for i in range(1, n + 1) if sum(C[_m][i]) != 0] for _m in range(m)}
@@ -267,6 +267,7 @@ def GEN(n: int, m: int, C: np.ndarray, population: int = 500) -> float:
     del creator.Individual
     del toolbox     
 
-    best_individual = hof[0]      
-    
-    return best_individual.fitness.values[0
+    best_individual = hof[0]    
+    best_seq = generate_seq(best_individual, tasks)
+  
+    return best_individual.fitness.values[0], best_seq
